@@ -108,10 +108,25 @@ export function useBookings() {
     return bookings.find(b => b.booking_date === dateStr);
   };
 
+  const deleteBooking = async (bookingId: string): Promise<{ success: boolean; error?: string }> => {
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', bookingId);
+
+    if (error) {
+      console.error('Error deleting booking:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  };
+
   return {
     bookings,
     loading,
     createBooking,
+    deleteBooking,
     isDateBooked,
     getBookingForDate,
     refetch: fetchBookings,

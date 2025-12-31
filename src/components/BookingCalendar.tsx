@@ -15,7 +15,7 @@ export function BookingCalendar() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  const { bookings, loading, isDateBooked, getBookingForDate, createBooking } = useBookings();
+  const { bookings, loading, isDateBooked, getBookingForDate, createBooking, deleteBooking } = useBookings();
   const { user, isWhitelisted } = useAuth();
 
   const monthStart = startOfMonth(currentMonth);
@@ -212,6 +212,7 @@ export function BookingCalendar() {
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
         booking={selectedBooking}
+        onDelete={deleteBooking}
       />
     </div>
   );
