@@ -4,32 +4,34 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Lock, Mail, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Calendar, Lock, Mail, ArrowLeft, AlertCircle, UserPlus, LogIn } from 'lucide-react';
 
-const loginSchema = z.object({
+const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type AuthFormData = z.infer<typeof authSchema>;
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
-  const { signIn, user, isWhitelisted } = useAuth();
+  const { signIn, user, isWhitelisted, checkWhitelist } = useAuth();
   const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<AuthFormData>({
+    resolver: zodResolver(authSchema),
   });
 
   // Redirect if already logged in and whitelisted
@@ -39,27 +41,61 @@ export default function Auth() {
     }
   }, [user, isWhitelisted, navigate]);
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
     setError(null);
 
-    const result = await signIn(data.email, data.password);
+    // Check whitelist first
+    const whitelisted = await checkWhitelist(data.email);
+    if (!whitelisted) {
+      setError('This email is not authorized to access the system. Please contact the administrator.');
+      setIsLoading(false);
+      return;
+    }
 
-    setIsLoading(false);
-
-    if (result.error) {
-      setError(result.error.message);
-      toast({
-        title: 'Login Failed',
-        description: result.error.message,
-        variant: 'destructive',
+    if (isSignUp) {
+      // Sign up flow
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: data.email.toLowerCase(),
+        password: data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
       });
+
+      setIsLoading(false);
+
+      if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
+          setError('This email is already registered. Please sign in instead.');
+        } else {
+          setError(signUpError.message);
+        }
+      } else {
+        toast({
+          title: 'Account Created!',
+          description: 'You can now sign in with your credentials.',
+        });
+        setIsSignUp(false);
+      }
     } else {
-      toast({
-        title: 'Welcome!',
-        description: 'You have successfully logged in.',
-      });
-      navigate('/');
+      // Sign in flow
+      const result = await signIn(data.email, data.password);
+      setIsLoading(false);
+
+      if (result.error) {
+        if (result.error.message.includes('Invalid login')) {
+          setError('Invalid email or password. If you haven\'t registered yet, please sign up first.');
+        } else {
+          setError(result.error.message);
+        }
+      } else {
+        toast({
+          title: 'Welcome!',
+          description: 'You have successfully logged in.',
+        });
+        navigate('/');
+      }
     }
   };
 
@@ -77,7 +113,7 @@ export default function Auth() {
         </Button>
       </div>
 
-      {/* Login Form */}
+      {/* Auth Form */}
       <div className="flex-1 flex items-center justify-center px-4 pb-8">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-8 animate-scale-in decorative-border">
@@ -89,7 +125,7 @@ export default function Auth() {
                 </div>
               </div>
               <h1 className="text-2xl font-serif font-bold text-foreground">
-                Admin Login
+                {isSignUp ? 'Create Account' : 'Admin Login'}
               </h1>
               <p className="text-sm text-muted-foreground mt-2">
                 श्री श्याम सेवक कल्याण संघ
@@ -114,7 +150,7 @@ export default function Auth() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder="admin@shyamsewak.org"
                   {...register('email')}
                   className="h-11"
                 />
@@ -144,18 +180,41 @@ export default function Auth() {
                 type="submit"
                 variant="saffron"
                 size="lg"
-                className="w-full"
+                className="w-full gap-2"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? (
+                  isSignUp ? 'Creating Account...' : 'Signing in...'
+                ) : (
+                  <>
+                    {isSignUp ? <UserPlus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+                    {isSignUp ? 'Create Account' : 'Sign In'}
+                  </>
+                )}
               </Button>
             </form>
 
+            {/* Toggle Sign In/Sign Up */}
+            <div className="mt-6 pt-6 border-t border-border text-center">
+              <p className="text-sm text-muted-foreground">
+                {isSignUp ? 'Already have an account?' : "First time? Create your account"}
+              </p>
+              <Button
+                variant="link"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                }}
+                className="mt-1"
+              >
+                {isSignUp ? 'Sign In' : 'Sign Up'}
+              </Button>
+            </div>
+
             {/* Info */}
-            <div className="mt-6 pt-6 border-t border-border">
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
               <p className="text-xs text-center text-muted-foreground">
                 Only authorized administrators can access this system.
-                <br />
                 Contact the organization for access.
               </p>
             </div>
