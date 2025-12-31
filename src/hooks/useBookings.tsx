@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -98,12 +99,12 @@ export function useBookings() {
   };
 
   const isDateBooked = (date: Date): boolean => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
     return bookings.some(b => b.booking_date === dateStr);
   };
 
   const getBookingForDate = (date: Date): Booking | undefined => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
     return bookings.find(b => b.booking_date === dateStr);
   };
 
