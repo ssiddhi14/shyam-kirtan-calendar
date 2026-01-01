@@ -28,7 +28,7 @@ const Index = () => {
               <span className="text-gradient">KALYAN SANGH</span>
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-              श्री श्याम सेवक कल्याण संघ
+              KIRTAN BOOKING CALANDER
             </p>
             <div className="h-1 w-24 mx-auto gradient-primary rounded-full mt-4" />
           </section>
