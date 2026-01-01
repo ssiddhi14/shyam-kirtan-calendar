@@ -42,7 +42,7 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn, user, isWhitelisted, checkWhitelist, resetPassword } = useAuth();
+  const { signIn, user, isWhitelisted, checkWhitelist, resetPassword, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm<AuthFormData>({
@@ -57,19 +57,19 @@ export default function Auth() {
     resolver: zodResolver(resetPasswordSchema),
   });
 
-  // Check if we're in reset mode from URL
+  // Check if we're in reset mode from URL or PASSWORD_RECOVERY event
   useEffect(() => {
-    if (searchParams.get('mode') === 'reset') {
+    if (searchParams.get('mode') === 'reset' || isPasswordRecovery) {
       setMode('reset');
     }
-  }, [searchParams]);
+  }, [searchParams, isPasswordRecovery]);
 
-  // Redirect if already logged in and whitelisted
+  // Redirect if already logged in and whitelisted, but NOT during password recovery
   useEffect(() => {
-    if (user && isWhitelisted) {
+    if (user && isWhitelisted && !isPasswordRecovery && mode !== 'reset') {
       navigate('/');
     }
-  }, [user, isWhitelisted, navigate]);
+  }, [user, isWhitelisted, isPasswordRecovery, mode, navigate]);
 
   const onLoginSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
@@ -132,11 +132,17 @@ export default function Auth() {
     if (error) {
       setError(error.message);
     } else {
+      // Clear the password recovery state
+      clearPasswordRecovery();
+      
       toast({
         title: 'Password Updated',
-        description: 'Your password has been successfully changed.',
+        description: 'Your password has been successfully changed. Please log in with your new password.',
       });
-      navigate('/');
+      
+      // Sign out and redirect to login
+      await supabase.auth.signOut();
+      setMode('login');
     }
   };
 
