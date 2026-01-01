@@ -4,12 +4,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Lock, Mail, ArrowLeft, AlertCircle, UserPlus, LogIn } from 'lucide-react';
+import { Calendar, Lock, Mail, ArrowLeft, AlertCircle, LogIn } from 'lucide-react';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -21,7 +21,6 @@ type AuthFormData = z.infer<typeof authSchema>;
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { signIn, user, isWhitelisted, checkWhitelist } = useAuth();
   const { toast } = useToast();
@@ -48,54 +47,27 @@ export default function Auth() {
     // Check whitelist first
     const whitelisted = await checkWhitelist(data.email);
     if (!whitelisted) {
-      setError('This email is not authorized to access the system. Please contact the administrator.');
+      setError('This email is not authorized to access the system.');
       setIsLoading(false);
       return;
     }
 
-    if (isSignUp) {
-      // Sign up flow
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: data.email.toLowerCase(),
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
+    // Sign in flow only
+    const result = await signIn(data.email, data.password);
+    setIsLoading(false);
 
-      setIsLoading(false);
-
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          setError('This email is already registered. Please sign in instead.');
-        } else {
-          setError(signUpError.message);
-        }
+    if (result.error) {
+      if (result.error.message.includes('Invalid login')) {
+        setError('Invalid email or password.');
       } else {
-        toast({
-          title: 'Account Created!',
-          description: 'You can now sign in with your credentials.',
-        });
-        setIsSignUp(false);
+        setError(result.error.message);
       }
     } else {
-      // Sign in flow
-      const result = await signIn(data.email, data.password);
-      setIsLoading(false);
-
-      if (result.error) {
-        if (result.error.message.includes('Invalid login')) {
-          setError('Invalid email or password. If you haven\'t registered yet, please sign up first.');
-        } else {
-          setError(result.error.message);
-        }
-      } else {
-        toast({
-          title: 'Welcome!',
-          description: 'You have successfully logged in.',
-        });
-        navigate('/');
-      }
+      toast({
+        title: 'Welcome!',
+        description: 'You have successfully logged in.',
+      });
+      navigate('/');
     }
   };
 
@@ -125,7 +97,7 @@ export default function Auth() {
                 </div>
               </div>
               <h1 className="text-2xl font-serif font-bold text-foreground">
-                {isSignUp ? 'Create Account' : 'Admin Login'}
+                Admin Login
               </h1>
               <p className="text-sm text-muted-foreground mt-2">
                 श्री श्याम सेवक कल्याण संघ
@@ -183,33 +155,15 @@ export default function Auth() {
                 className="w-full gap-2"
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  isSignUp ? 'Creating Account...' : 'Signing in...'
-                ) : (
+                {isLoading ? 'Signing in...' : (
                   <>
-                    {isSignUp ? <UserPlus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
-                    {isSignUp ? 'Create Account' : 'Sign In'}
+                    <LogIn className="h-4 w-4" />
+                    Sign In
                   </>
                 )}
               </Button>
             </form>
 
-            {/* Toggle Sign In/Sign Up */}
-            <div className="mt-6 pt-6 border-t border-border text-center">
-              <p className="text-sm text-muted-foreground">
-                {isSignUp ? 'Already have an account?' : "First time? Create your account"}
-              </p>
-              <Button
-                variant="link"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError(null);
-                }}
-                className="mt-1"
-              >
-                {isSignUp ? 'Sign In' : 'Sign Up'}
-              </Button>
-            </div>
 
             {/* Info */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
