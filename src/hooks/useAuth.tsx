@@ -7,10 +7,12 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isWhitelisted: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkWhitelist: (email: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  clearPasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,11 +22,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth event:', event);
+        
+        // Handle PASSWORD_RECOVERY event
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsPasswordRecovery(true);
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -52,6 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const clearPasswordRecovery = () => {
+    setIsPasswordRecovery(false);
+  };
 
   const checkWhitelist = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
@@ -100,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isWhitelisted, signIn, signOut, checkWhitelist, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, isWhitelisted, isPasswordRecovery, signIn, signOut, checkWhitelist, resetPassword, clearPasswordRecovery }}>
       {children}
     </AuthContext.Provider>
   );
