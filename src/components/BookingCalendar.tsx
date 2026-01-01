@@ -1,12 +1,23 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, isBefore, startOfToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, MapPin, Clock, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Clock, User, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookings, Booking } from '@/hooks/useBookings';
 import { useAuth } from '@/hooks/useAuth';
 import { BookingDialog } from '@/components/BookingDialog';
 import { BookingDetailsDialog } from '@/components/BookingDetailsDialog';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export function BookingCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -14,9 +25,14 @@ export function BookingCalendar() {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { bookings, loading, isDateBooked, getBookingForDate, createBooking, deleteBooking } = useBookings();
   const { user, isWhitelisted } = useAuth();
+  const { toast } = useToast();
+
+  const canDelete = user && isWhitelisted;
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -25,6 +41,33 @@ export function BookingCalendar() {
   // Get the starting day offset (0 = Sunday)
   const startOffset = monthStart.getDay();
   const today = startOfToday();
+
+  const handleDeleteClick = (e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    setBookingToDelete(booking);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!bookingToDelete) return;
+    
+    setIsDeleting(true);
+    const result = await deleteBooking(bookingToDelete.id);
+    setIsDeleting(false);
+
+    if (result.success) {
+      toast({
+        title: 'Booking Deleted',
+        description: 'The booking has been successfully removed.',
+      });
+      setBookingToDelete(null);
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to delete booking',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleDateClick = (date: Date) => {
     const booking = getBookingForDate(date);
@@ -167,9 +210,18 @@ export function BookingCalendar() {
                     setSelectedBooking(booking);
                     setShowDetailsDialog(true);
                   }}
-                  className="p-4 rounded-xl gradient-card border border-border/50 shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer decorative-border"
+                  className="p-4 rounded-xl gradient-card border border-border/50 shadow-soft hover:shadow-glow transition-all duration-300 cursor-pointer decorative-border relative"
                 >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  {canDelete && (
+                    <button
+                      onClick={(e) => handleDeleteClick(e, booking)}
+                      className="absolute top-3 right-3 p-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors"
+                      title="Delete booking"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pr-8">
                     <div>
                       <h4 className="font-semibold text-foreground">{booking.kirtan_name}</h4>
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -214,6 +266,28 @@ export function BookingCalendar() {
         booking={selectedBooking}
         onDelete={deleteBooking}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!bookingToDelete} onOpenChange={(open) => !open && setBookingToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the booking for "{bookingToDelete?.kirtan_name}" on {bookingToDelete && format(new Date(bookingToDelete.booking_date), 'dd MMMM yyyy')}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
