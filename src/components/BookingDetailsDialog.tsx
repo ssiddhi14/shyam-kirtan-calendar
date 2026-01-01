@@ -37,8 +37,8 @@ export function BookingDetailsDialog({ open, onOpenChange, booking, onDelete }: 
 
   if (!booking) return null;
 
-  const isCreator = user && booking.created_by === user.id;
-  const canDelete = isCreator && isWhitelisted;
+  // Any whitelisted user can delete any booking
+  const canDelete = user && isWhitelisted;
 
   const handleDelete = async () => {
     if (!onDelete) return;
