@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   checkWhitelist: (email: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,8 +84,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsWhitelisted(false);
   };
 
+  const resetPassword = async (email: string) => {
+    // Check if email is whitelisted first
+    const whitelisted = await checkWhitelist(email);
+    
+    if (!whitelisted) {
+      return { error: new Error('This email is not authorized to access the system.') };
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase(), {
+      redirectTo: `${window.location.origin}/auth?mode=reset`,
+    });
+
+    return { error };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, isWhitelisted, signIn, signOut, checkWhitelist }}>
+    <AuthContext.Provider value={{ user, session, loading, isWhitelisted, signIn, signOut, checkWhitelist, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
