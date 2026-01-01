@@ -36,13 +36,13 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 type AuthMode = 'login' | 'forgot' | 'reset';
 
 export default function Auth() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signIn, user, isWhitelisted, checkWhitelist, resetPassword, isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const { signIn, user, session, isWhitelisted, checkWhitelist, resetPassword, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm<AuthFormData>({
@@ -63,6 +63,31 @@ export default function Auth() {
       setMode('reset');
     }
   }, [searchParams, isPasswordRecovery]);
+
+  // If the reset link uses a PKCE "code" param, exchange it for a session
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (!code) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+      setIsLoading(false);
+
+      if (error) {
+        setError('Reset link is invalid or expired. Please request a new one.');
+        return;
+      }
+
+      // Clean up URL (remove one-time code)
+      const next = new URLSearchParams(searchParams);
+      next.delete('code');
+      next.delete('type');
+      if (next.get('mode') !== 'reset') next.set('mode', 'reset');
+      setSearchParams(next, { replace: true });
+    });
+  }, [searchParams, setSearchParams]);
 
   // Redirect if already logged in and whitelisted, but NOT during password recovery
   useEffect(() => {
@@ -122,6 +147,12 @@ export default function Auth() {
   const onResetSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);
     setError(null);
+
+    if (!session) {
+      setIsLoading(false);
+      setError('Auth session missing! Please open the latest reset link and try again.');
+      return;
+    }
 
     const { error } = await supabase.auth.updateUser({
       password: data.password,
