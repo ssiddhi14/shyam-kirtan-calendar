@@ -57,7 +57,7 @@ const Index = () => {
 
           {/* Footer */}
           <footer className="mt-12 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} SHREE SHYAM SEWAK KALYAN SANGH</p>
+            <p> SHREE SHYAM SEWAK KALYAN SANGH</p>
             <p className="mt-1">जय श्री श्याम 🙏</p>
           </footer>
         </main>
