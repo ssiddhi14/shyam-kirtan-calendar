@@ -9,8 +9,8 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>SHREE SHYAM SEWAK AKLYAN SANGH - Kirtan Booking Calendar</title>
-        <meta name="description" content="Book and view upcoming Kirtan events at SHREE SHYAM SEWAK AKLYAN SANGH. Community calendar for spiritual gatherings." />
+        <title>SHREE SHYAM SEWAK KALYAN SANGH - Kirtan Booking Calendar</title>
+        <meta name="description" content="Book and view upcoming Kirtan events at SHREE SHYAM SEWAK KALYAN SANGH. Community calendar for spiritual gatherings." />
       </Helmet>
 
       <div className="min-h-screen gradient-hero">
@@ -25,7 +25,7 @@ const Index = () => {
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-4 leading-tight">
               SHREE SHYAM SEWAK
               <br />
-              <span className="text-gradient">AKLYAN SANGH</span>
+              <span className="text-gradient">KALYAN SANGH</span>
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
               श्री श्याम सेवक कल्याण संघ
@@ -57,7 +57,7 @@ const Index = () => {
 
           {/* Footer */}
           <footer className="mt-12 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} SHREE SHYAM SEWAK AKLYAN SANGH</p>
+            <p>© {new Date().getFullYear()} SHREE SHYAM SEWAK KALYAN SANGH</p>
             <p className="mt-1">जय श्री श्याम 🙏</p>
           </footer>
         </main>
