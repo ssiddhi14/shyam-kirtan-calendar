@@ -71,15 +71,25 @@ export function BookingCalendar() {
 
   const handleDateClick = (date: Date) => {
     const booking = getBookingForDate(date);
+    const isPast = isBefore(date, today) && !isToday(date);
     
     if (booking) {
       // Show booking details
       setSelectedBooking(booking);
       setShowDetailsDialog(true);
-    } else if (user && isWhitelisted && !isBefore(date, today)) {
-      // Open booking form for empty dates (only for logged-in whitelisted users)
-      setSelectedDate(date);
-      setShowBookingDialog(true);
+    } else if (!isPast && isSameMonth(date, currentMonth)) {
+      if (user && isWhitelisted) {
+        // Open booking form for empty dates (only for logged-in whitelisted users)
+        setSelectedDate(date);
+        setShowBookingDialog(true);
+      } else {
+        // Show login required message for non-logged users
+        toast({
+          title: 'Login Required',
+          description: 'Please login to book this date.',
+          variant: 'default',
+        });
+      }
     }
   };
 
