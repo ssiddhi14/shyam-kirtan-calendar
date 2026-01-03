@@ -212,7 +212,6 @@ export function BookingCalendar() {
           <div className="grid gap-3">
             {bookings
               .filter(b => !isBefore(new Date(b.booking_date), today))
-              .slice(0, 5)
               .map((booking) => (
                 <div
                   key={booking.id}
