@@ -176,11 +176,24 @@ export function BookingCalendar() {
               onClick={() => handleDateClick(date)}
               className={getDayClasses(date)}
             >
-              <span className="text-sm md:text-base">{format(date, 'd')}</span>
-              {isBooked && isSameMonth(date, currentMonth) && (
-                <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                </div>
+              {isBooked && booking?.photo_url && isSameMonth(date, currentMonth) ? (
+                <>
+                  <img
+                    src={booking.photo_url}
+                    alt={booking.kirtan_name}
+                    className="absolute inset-0 w-full h-full object-cover rounded-lg opacity-60"
+                  />
+                  <span className="relative z-10 text-sm md:text-base font-bold drop-shadow-md">{format(date, 'd')}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm md:text-base">{format(date, 'd')}</span>
+                  {isBooked && isSameMonth(date, currentMonth) && (
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           );
