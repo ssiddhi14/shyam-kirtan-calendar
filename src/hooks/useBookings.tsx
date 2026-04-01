@@ -12,6 +12,7 @@ export interface Booking {
   booking_time: string;
   created_at: string;
   created_by: string | null;
+  photo_url: string | null;
 }
 
 export interface BookingFormData {
