@@ -24,6 +24,7 @@ export type Database = {
           id: string
           kirtan_name: string
           kirtan_place: string
+          photo_url: string | null
         }
         Insert: {
           booked_by: string
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           kirtan_name: string
           kirtan_place: string
+          photo_url?: string | null
         }
         Update: {
           booked_by?: string
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           kirtan_name?: string
           kirtan_place?: string
+          photo_url?: string | null
         }
         Relationships: []
       }
