@@ -75,6 +75,11 @@ export function BookingDetailsDialog({ open, onOpenChange, booking, onDelete }: 
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
+            {booking.photo_url && (
+              <div className="w-full rounded-xl overflow-hidden border border-border">
+                <img src={booking.photo_url} alt={booking.kirtan_name} className="w-full h-48 object-cover" />
+              </div>
+            )}
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
               <h3 className="font-serif font-bold text-lg text-foreground">
                 {booking.kirtan_name}

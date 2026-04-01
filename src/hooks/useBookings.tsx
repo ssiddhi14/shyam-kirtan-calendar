@@ -12,6 +12,7 @@ export interface Booking {
   booking_time: string;
   created_at: string;
   created_by: string | null;
+  photo_url: string | null;
 }
 
 export interface BookingFormData {
@@ -20,6 +21,7 @@ export interface BookingFormData {
   kirtan_place: string;
   booking_date: string;
   booking_time: string;
+  photo_url?: string;
 }
 
 export function useBookings() {
@@ -85,6 +87,7 @@ export function useBookings() {
         kirtan_name: formData.kirtan_name,
         kirtan_place: formData.kirtan_place,
         booking_time: formData.booking_time,
+        photo_url: formData.photo_url || null,
       }]);
 
     if (error) {

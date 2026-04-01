@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { BookingFormData } from '@/hooks/useBookings';
-import { Calendar, Clock, MapPin, User, Music } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Music, ImagePlus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const bookingSchema = z.object({
   booked_by: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long'),
@@ -35,6 +36,9 @@ interface BookingDialogProps {
 
 export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: BookingDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const {
@@ -52,17 +56,52 @@ export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: Bo
     },
   });
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+        toast({ title: 'Invalid file', description: 'Only JPG and PNG images are allowed', variant: 'destructive' });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'File too large', description: 'Image must be under 5MB', variant: 'destructive' });
+        return;
+      }
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadPhoto = async (file: File, bookingDate: string): Promise<string | null> => {
+    const ext = file.name.split('.').pop();
+    const filePath = `${bookingDate}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('booking-photos').upload(filePath, file);
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from('booking-photos').getPublicUrl(filePath);
+    return urlData.publicUrl;
+  };
+
   const handleFormSubmit = async (data: FormData) => {
     if (!selectedDate) return;
 
     setIsSubmitting(true);
-    
+
+    let photoUrl: string | undefined;
+    if (photoFile) {
+      const url = await uploadPhoto(photoFile, format(selectedDate, 'yyyy-MM-dd'));
+      if (url) photoUrl = url;
+    }
+
     const result = await onSubmit({
       booked_by: data.booked_by,
       kirtan_name: data.kirtan_name,
       kirtan_place: data.kirtan_place,
       booking_time: data.booking_time,
       booking_date: format(selectedDate, 'yyyy-MM-dd'),
+      photo_url: photoUrl,
     });
 
     setIsSubmitting(false);
@@ -85,6 +124,8 @@ export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: Bo
 
   const handleClose = () => {
     reset();
+    setPhotoFile(null);
+    setPhotoPreview(null);
     onOpenChange(false);
   };
 
@@ -168,6 +209,26 @@ export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: Bo
             />
             {errors.booking_time && (
               <p className="text-xs text-destructive">{errors.booking_time.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="photo" className="flex items-center gap-2 text-sm font-medium">
+              <ImagePlus className="h-4 w-4 text-muted-foreground" />
+              Upload Photo
+            </Label>
+            <Input
+              id="photo"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              ref={fileInputRef}
+              onChange={handlePhotoChange}
+              className="transition-all focus:ring-2 focus:ring-primary/20 cursor-pointer"
+            />
+            {photoPreview && (
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+              </div>
             )}
           </div>
 
