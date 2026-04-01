@@ -87,6 +87,7 @@ export function useBookings() {
         kirtan_name: formData.kirtan_name,
         kirtan_place: formData.kirtan_place,
         booking_time: formData.booking_time,
+        photo_url: formData.photo_url || null,
       }]);
 
     if (error) {
