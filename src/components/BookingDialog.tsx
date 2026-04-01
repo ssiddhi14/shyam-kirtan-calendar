@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { BookingFormData } from '@/hooks/useBookings';
-import { Calendar, Clock, MapPin, User, Music } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Music, ImagePlus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const bookingSchema = z.object({
   booked_by: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long'),
