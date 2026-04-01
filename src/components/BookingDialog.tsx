@@ -212,6 +212,26 @@ export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: Bo
             )}
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="photo" className="flex items-center gap-2 text-sm font-medium">
+              <ImagePlus className="h-4 w-4 text-muted-foreground" />
+              Upload Photo
+            </Label>
+            <Input
+              id="photo"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              ref={fileInputRef}
+              onChange={handlePhotoChange}
+              className="transition-all focus:ring-2 focus:ring-primary/20 cursor-pointer"
+            />
+            {photoPreview && (
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
