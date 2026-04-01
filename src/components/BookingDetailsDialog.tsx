@@ -115,7 +115,15 @@ export function BookingDetailsDialog({ open, onOpenChange, booking, onDelete }: 
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Location</p>
-                  <p className="font-medium text-foreground">{booking.kirtan_place}</p>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.kirtan_place)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary underline underline-offset-2 hover:text-primary/80 cursor-pointer transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {booking.kirtan_place}
+                  </a>
                 </div>
               </div>
 
