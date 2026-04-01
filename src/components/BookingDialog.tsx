@@ -124,6 +124,8 @@ export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: Bo
 
   const handleClose = () => {
     reset();
+    setPhotoFile(null);
+    setPhotoPreview(null);
     onOpenChange(false);
   };
 
