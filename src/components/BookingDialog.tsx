@@ -36,6 +36,9 @@ interface BookingDialogProps {
 
 export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: BookingDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const {
