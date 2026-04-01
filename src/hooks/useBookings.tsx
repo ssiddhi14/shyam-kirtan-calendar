@@ -21,6 +21,7 @@ export interface BookingFormData {
   kirtan_place: string;
   booking_date: string;
   booking_time: string;
+  photo_url?: string;
 }
 
 export function useBookings() {
