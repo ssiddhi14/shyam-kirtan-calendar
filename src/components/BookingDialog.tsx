@@ -56,17 +56,52 @@ export function BookingDialog({ open, onOpenChange, selectedDate, onSubmit }: Bo
     },
   });
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+        toast({ title: 'Invalid file', description: 'Only JPG and PNG images are allowed', variant: 'destructive' });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'File too large', description: 'Image must be under 5MB', variant: 'destructive' });
+        return;
+      }
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadPhoto = async (file: File, bookingDate: string): Promise<string | null> => {
+    const ext = file.name.split('.').pop();
+    const filePath = `${bookingDate}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('booking-photos').upload(filePath, file);
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from('booking-photos').getPublicUrl(filePath);
+    return urlData.publicUrl;
+  };
+
   const handleFormSubmit = async (data: FormData) => {
     if (!selectedDate) return;
 
     setIsSubmitting(true);
-    
+
+    let photoUrl: string | undefined;
+    if (photoFile) {
+      const url = await uploadPhoto(photoFile, format(selectedDate, 'yyyy-MM-dd'));
+      if (url) photoUrl = url;
+    }
+
     const result = await onSubmit({
       booked_by: data.booked_by,
       kirtan_name: data.kirtan_name,
       kirtan_place: data.kirtan_place,
       booking_time: data.booking_time,
       booking_date: format(selectedDate, 'yyyy-MM-dd'),
+      photo_url: photoUrl,
     });
 
     setIsSubmitting(false);
